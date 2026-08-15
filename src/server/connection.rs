@@ -5836,9 +5836,7 @@ async fn start_ipc(
     let headless_cm = crate::is_server()
         && crate::platform::is_headless_allowed()
         && linux_desktop_manager::is_headless();
-    #[cfg(target_os = "windows")]
-    let headless_cm = true;
-    #[cfg(not(any(target_os = "linux", target_os = "windows")))]
+    #[cfg(not(target_os = "linux"))]
     let headless_cm = false;
     let mut stream = None;
     if !headless_cm {
@@ -5850,10 +5848,6 @@ async fn start_ipc(
         #[allow(unused_mut)]
         #[allow(unused_assignments)]
         let mut args = vec!["--cm"];
-        #[cfg(target_os = "windows")]
-        if headless_cm {
-            args = vec!["--cm-no-ui"];
-        }
         #[allow(unused_mut)]
         #[cfg(target_os = "linux")]
         let mut user = None;
