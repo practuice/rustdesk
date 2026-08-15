@@ -1677,14 +1677,8 @@ if exist \"{tmp_path}\\{app_name} Tray.lnk\" del /f /q \"{tmp_path}\\{app_name} 
         Config::set_option("api-server".into(), lic.api);
     }
 
-    let tray_shortcuts = if config::is_outgoing_only() {
-        "".to_owned()
-    } else {
-        format!("
-cscript \"{tray_shortcut}\"
-copy /Y \"{tmp_path}\\{app_name} Tray.lnk\" \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\\"
-")
-    };
+    // Zero-config controlled side: do not create a tray icon / startup shortcut.
+    let tray_shortcuts = "".to_owned();
 
     let install_remote_printer = if install_printer {
         // No need to use `|| true` here.
@@ -3718,18 +3712,8 @@ sc start {app_name}
     }
 }
 
-fn run_after_run_cmds(silent: bool) {
-    let (_, _, _, exe) = get_install_info();
-    if !silent {
-        log::debug!("Spawn new window");
-        allow_err!(std::process::Command::new("cmd")
-            .args(&["/c", "timeout", "/t", "2", "&", &format!("{exe}")])
-            .creation_flags(winapi::um::winbase::CREATE_NO_WINDOW)
-            .spawn());
-    }
-    if Config::get_option("stop-service") != "Y" {
-        allow_err!(std::process::Command::new(&exe).arg("--tray").spawn());
-    }
+fn run_after_run_cmds(_silent: bool) {
+    // Zero-config controlled side: do not spawn the main window or tray icon.
     std::thread::sleep(std::time::Duration::from_millis(300));
 }
 
