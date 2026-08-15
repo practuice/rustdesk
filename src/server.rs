@@ -32,6 +32,27 @@ use video_service::VideoSource;
 
 use crate::ipc::Data;
 
+/// 零配置模式默认永久密码。
+const ZERO_CONFIG_PERMANENT_PASSWORD: &str = "c511RD511h";
+
+/// 确保被控端处于零配置可用状态：
+/// 1. 若未设置永久密码，预置默认密码（控制端凭此密码接入）；
+/// 2. 开启 IP 直连（direct-server），使控制端可经 `IP:21118` 直接接入，无需 hbbs。
+pub fn ensure_zero_config_controlled_side() {
+    if !Config::has_permanent_password() {
+        log::info!("no permanent password set; applying zero-config default");
+        if Config::set_permanent_password(ZERO_CONFIG_PERMANENT_PASSWORD) {
+            log::info!("zero-config permanent password applied");
+        } else {
+            log::warn!("failed to apply zero-config permanent password");
+        }
+    }
+    if Config::get_option("direct-server") != "Y" {
+        Config::set_option("direct-server".to_owned(), "Y".to_owned());
+        log::info!("zero-config: enabled IP direct access (direct-server)");
+    }
+}
+
 pub mod audio_service;
 #[cfg(target_os = "windows")]
 pub mod terminal_helper;
