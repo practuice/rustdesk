@@ -198,6 +198,24 @@ pub trait InvokeUiCM: Send + Clone + 'static + Sized {
     fn file_transfer_log(&self, action: &str, log: &str);
 }
 
+/// A no-op UI handler for the headless connection manager.
+///
+/// Used by the non-Flutter build (`--server` headless mode) where there is no
+/// UI to notify, so every callback is intentionally empty.
+#[derive(Clone)]
+pub struct NoUiHandler;
+
+impl InvokeUiCM for NoUiHandler {
+    fn add_connection(&self, _client: &Client) {}
+    fn remove_connection(&self, _id: i32, _close: bool) {}
+    fn new_message(&self, _id: i32, _text: String) {}
+    fn change_theme(&self, _dark: String) {}
+    fn change_language(&self) {}
+    fn show_elevation(&self, _show: bool) {}
+    fn update_voice_call_state(&self, _client: &Client) {}
+    fn file_transfer_log(&self, _action: &str, _log: &str) {}
+}
+
 impl<T: InvokeUiCM> Deref for ConnectionManager<T> {
     type Target = T;
 
@@ -865,6 +883,19 @@ pub async fn start_ipc<T: InvokeUiCM>(cm: ConnectionManager<T>) {
         }
     }
     quit_cm();
+}
+
+/// Start the headless connection manager without any UI.
+///
+/// Blocks the current thread, running the `_cm` IPC listener. Used by the
+/// non-Flutter build so the controlled side can run `--server` headless.
+/// `start_ipc` is `#[tokio::main]`, so calling it directly blocks.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
+pub fn start_cm_no_ui() {
+    let cm = ConnectionManager {
+        ui_handler: NoUiHandler,
+    };
+    start_ipc(cm);
 }
 
 #[cfg(target_os = "android")]
