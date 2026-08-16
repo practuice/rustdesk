@@ -9,6 +9,10 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 pub fn start_tray() {
+    // Zero-config controlled side (non-flutter build): never show the tray icon.
+    #[cfg(not(feature = "flutter"))]
+    return;
+
     if crate::ui_interface::get_builtin_option(hbb_common::config::keys::OPTION_HIDE_TRAY) == "Y" {
         #[cfg(not(target_os = "macos"))]
         {
